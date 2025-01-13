@@ -1,0 +1,14 @@
+{
+    "extends": "@tsconfig/node23/tsconfig.json",
+    "exclude": ["**/*.js"],
+    "include": ["**/*.ts", ".eslintrc.mjs"],
+  
+    "compilerOptions": {
+      "strict": true,
+      "paths": {
+        "@/*": ["./src/*"],
+        "@tests/*": ["./tests/*"]
+      }
+    }
+  }
+  
