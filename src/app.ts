@@ -1,6 +1,9 @@
 import 'dotenv/config'
 import express from 'express'
 import { Client, GatewayIntentBits } from 'discord.js'
+import { type Database } from './database'
+// import accomplishments from './modules/accomplishments/controller'
+import messages from './modules/messages/controller'
 
 const client = new Client({
   intents: [
@@ -31,8 +34,12 @@ client.on('messageCreate', async (message) => {
 
 client.login(process.env.DISCORD_BOT_ID)
 
-export default function createApp() {
+export default function createApp(db: Database) {
   const app = express()
+
+  app.use(express.json())
+
+  app.use('/messages', messages(db))
 
   return app
 }
