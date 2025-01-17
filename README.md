@@ -17,3 +17,6 @@ reusable piece of text that you can re-use
                         6. For each user store the congratulatory message and valuable metadata in the database so that it can be retrieved later
 
                         7. On failure, inform the user that the congratulatory message could not be formed/sent/stored
+
+
+# Complete /templates and /sprint routes
