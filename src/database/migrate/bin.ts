@@ -50,11 +50,9 @@ const isRunDirectly = path
   .includes(path.resolve(process.argv[1]))
 
 if (isRunDirectly) {
-  const {DATABASE_URL} = process.env
+  const { DATABASE_URL } = process.env
   if (typeof DATABASE_URL !== 'string') {
-    throw new Error(
-      'Provide DATABASE_URL in your environment variables'
-    )
+    throw new Error('Provide DATABASE_URL in your environment variables')
   }
 
   migrateDefault(DATABASE_URL)

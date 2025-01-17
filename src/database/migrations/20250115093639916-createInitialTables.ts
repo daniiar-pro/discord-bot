@@ -48,5 +48,3 @@ export async function down() {
 // export async function down() {
 //   // unnecessary, as this is the first migration, we can just delete the database
 // }
-
-

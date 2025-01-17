@@ -26,6 +26,8 @@
   "homepage": "https://github.com/daniiar-pro/discord-bot#readme",
   "description": "",
   "dependencies": {
+    "@giphy/js-fetch-api": "^5.6.0",
+    "axios": "^1.7.9",
     "better-sqlite3": "^11.7.2",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7",
