@@ -3,27 +3,39 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely'
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export interface Messages {
-  id: Generated<number>
-  message: string
+  id: Generated<number>;
+  message: string;
+}
+
+export interface Sprint {
+  id: Generated<number | null>;
+  sprintCode: string;
+  sprintTitle: string;
+}
+
+export interface Templates {
+  id: Generated<number | null>;
+  template: string;
 }
 
 export interface Users {
-  congratsMessage: string
-  id: Generated<number>
-  sprintCode: string
-  sprintTitle: string
-  userName: string
+  congratsMessage: string;
+  id: Generated<number | null>;
+  sprintCode: string;
+  sprintTitle: string | null;
+  userName: string;
 }
 
 export interface DB {
-  messages: Messages
-  users: Users
+  messages: Messages;
+  sprint: Sprint;
+  templates: Templates;
+  users: Users;
 }

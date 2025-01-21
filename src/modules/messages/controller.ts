@@ -3,10 +3,19 @@ import { Router } from 'express'
 import type { Database } from '../../database'
 import buildRepository from './repository'
 import { jsonRoute } from '../../utils/middleware'
-import rendersMessage from './renderMessageDiscordWebHook/renderMessageOnDiscord'
+import { getMessageTemplate } from '../templates/repository'
+import buildTemplateRepo from '../templates/repository'
+import buildSprintRepo from '../sprints/repository'
+import axios from 'axios'
+import getGifs from './fetchGifs/getGifs'
+
+const { DISCORD_WEBHOOK_URL } = process.env
 
 export default (db: Database) => {
   const messages = buildRepository(db)
+  const templates = buildTemplateRepo(db)
+  const sprint = buildSprintRepo(db)
+
   const router = Router()
 
   // Get all messages ( GET: /messages)
@@ -50,16 +59,15 @@ export default (db: Database) => {
   router.post(
     '/',
     jsonRoute(async (req, res) => {
-
       const randomNumber = Math.floor(Math.random() * 21)
       const randomCongratsMessages = await messages.getAllMessages()
 
       try {
         const userName = req.body.username
         const sprintCode = req.body.sprintCode
-        const sprintTitle = req.body.sprintTitle
+        const sprintTitle = await sprint.assignSprintTitle(sprintCode)
+
         const congratsMessage = randomCongratsMessages[randomNumber].message
-        // 'This is awesome! You’re awesome! Way to go! ��🚀'
 
         const addNewCongrats = await messages.createCongratsMessage(
           userName,
@@ -68,7 +76,27 @@ export default (db: Database) => {
           congratsMessage
         )
 
-        await rendersMessage(userName, sprintTitle, congratsMessage)
+        const gifUrl = await getGifs()
+
+        const templateId = 1
+        await templates.getTemplateById(templateId)
+
+        const template = await getMessageTemplate()
+
+        const renderCongratsMessage = template
+          .replace('${userName}', userName)
+          .replace('${sprintTitle}', sprintTitle)
+
+        await axios.post(DISCORD_WEBHOOK_URL as string, {
+          content: `${renderCongratsMessage}\n ${congratsMessage}`,
+          embeds: [
+            {
+              image: {
+                url: gifUrl,
+              },
+            },
+          ],
+        })
 
         res.status(200)
         return addNewCongrats

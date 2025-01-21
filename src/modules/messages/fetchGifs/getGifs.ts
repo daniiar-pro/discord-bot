@@ -18,6 +18,5 @@ export default async () => {
   // const gifUrl = gifs[0].images.original.url
   const gifUrl = gifs[randomNumber].images.original.url
 
-
   return gifUrl
 }

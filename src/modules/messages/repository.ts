@@ -1,5 +1,5 @@
 import type { Database } from '../../database'
-
+// CREATE TABLE IF NOT EXISTS "users" ("id" integer not null primary key autoincrement, "user_name" text not null, "sprint_code" text not null, "sprint_title" text not null, "congrats_message" text not null);
 export default (db: Database) => ({
   getAllMessages: async () =>
     await db.selectFrom('messages').selectAll().execute(),
