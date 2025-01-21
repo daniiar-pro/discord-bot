@@ -8,6 +8,10 @@ import buildTemplateRepo from '../templates/repository'
 import buildSprintRepo from '../sprints/repository'
 import axios from 'axios'
 import getGifs from './fetchGifs/getGifs'
+import * as schema from './schema'
+import NotFound from '../../utils/errors/NotFound'
+import { StatusCodes } from 'http-status-codes'
+import BadRequest from '../../utils/errors/BadRequest'
 
 const { DISCORD_WEBHOOK_URL } = process.env
 
@@ -23,9 +27,11 @@ export default (db: Database) => {
     '/',
     jsonRoute(async (req, res) => {
       const congratsMessages = await messages.getAllMessages()
-      res.status(200)
-      res.json(congratsMessages)
-      return
+
+      if (!congratsMessages || congratsMessages.length === 0) {
+        throw new NotFound('No messages found')
+      }
+      res.status(200).json(congratsMessages)
     })
   )
 
@@ -34,10 +40,17 @@ export default (db: Database) => {
     '/username/:userName',
     jsonRoute(async (req, res) => {
       const userName = req.params.userName
+
+      if (!userName) {
+        throw new BadRequest('User name is required')
+      }
+
       const messagesForUser = await messages.getMessagesForUser(userName)
-      res.status(200)
-      res.json(messagesForUser)
-      return
+
+      if (!messagesForUser || messagesForUser.length === 0) {
+        throw new NotFound(`No messages found for the user: ${userName}`)
+      }
+      res.status(200).json(messagesForUser)
     })
   )
 
@@ -47,12 +60,17 @@ export default (db: Database) => {
     '/sprint/:sprintCode',
     jsonRoute(async (req, res) => {
       const sprintCode = req.params.sprintCode
+
+      if (!sprintCode) {
+        throw new BadRequest('Sprint code is required')
+      }
       const messagesForSprint = await messages.getMessagesForSprint(sprintCode)
-      console.log('sprintCode: ', sprintCode)
-      console.log('typeof sprint code: ', typeof sprintCode)
-      res.status(200)
-      res.json(messagesForSprint)
-      return
+      if (!messagesForSprint || messagesForSprint.length === 0) {
+        throw new NotFound(
+          `No messages found for the sprint code: ${sprintCode}`
+        )
+      }
+      res.status(200).json(messagesForSprint)
     })
   )
 
@@ -65,23 +83,44 @@ export default (db: Database) => {
       try {
         const userName = req.body.username
         const sprintCode = req.body.sprintCode
+
+        if (!userName || !sprintCode) {
+          throw new BadRequest('Both username and sprintCode are required')
+        }
+
         const sprintTitle = await sprint.assignSprintTitle(sprintCode)
 
-        const congratsMessage = randomCongratsMessages[randomNumber].message
+        if (!sprintTitle) {
+          throw new NotFound(
+            `No sprint title found for sprint code: ${sprintCode}`
+          )
+        }
 
-        const addNewCongrats = await messages.createCongratsMessage(
-          userName,
+        const congratsMessage = randomCongratsMessages[randomNumber]?.message
+
+        if (!congratsMessage) {
+          throw new NotFound('No random congratulatory message available')
+        }
+
+        const body = schema.parseInsertable({
+          congratsMessage,
           sprintCode,
           sprintTitle,
-          congratsMessage
-        )
+          userName,
+        })
 
-        const gifUrl = await getGifs()
+        const addNewCongrats = await messages.createCongratsMessage(body)
+
+        const gifUrl = await getGifs('celebration')
 
         const templateId = 1
         await templates.getTemplateById(templateId)
 
         const template = await getMessageTemplate()
+
+        if (!template) {
+          throw new NotFound('Template not found')
+        }
 
         const renderCongratsMessage = template
           .replace('${userName}', userName)
@@ -98,11 +137,16 @@ export default (db: Database) => {
           ],
         })
 
-        res.status(200)
-        return addNewCongrats
+        res.status(StatusCodes.OK).json(addNewCongrats)
       } catch (error) {
         console.error('Error handling POST request: ', error)
-        res.status(500).json({ error: 'Internal Server Error' })
+        if (error instanceof BadRequest || error instanceof NotFound) {
+          res.status(error.status).json({ error: error.message })
+        } else {
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ error: 'Internal Server Error' })
+        }
       }
     })
   )

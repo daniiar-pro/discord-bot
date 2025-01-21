@@ -1,48 +1,57 @@
-import type { Database } from '../../database'
+import { Insertable, Selectable, Updateable } from 'kysely'
+import type { Database, Sprint } from '../../database'
+
+const TABLE_SPRINT = 'sprint'
+type Row = Sprint
+type RowWithoutId = Omit<Row, 'id'>
+type RowInsert = Insertable<RowWithoutId>
+type RowUpdate = Updateable<RowWithoutId>
+type RowSelect = Selectable<Row>
 
 export default (db: Database) => ({
-  getAllSprint: async () => await db.selectFrom('sprint').selectAll().execute(),
+  getAllSprint: async () =>
+    await db.selectFrom(TABLE_SPRINT).selectAll().execute(),
 
-  getSprintById: async (id) => {
+  getSprintById: async (id: number) => {
     const selectedSprint = await db
-      .selectFrom('sprint')
+      .selectFrom(TABLE_SPRINT)
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()
     return selectedSprint
   },
 
-  assignSprintTitle: async (sprintCode:string) => {
+  assignSprintTitle: async (sprintCode: string): Promise<string> => {
     const result = await db
-      .selectFrom('sprint')
+      .selectFrom(TABLE_SPRINT)
       .select('sprintTitle')
       .where('sprintCode', '=', sprintCode)
       .executeTakeFirst()
     return result?.sprintTitle || 'No such sprint Title'
   },
 
-  addNewSprint: async (sprintTitle, sprintCode) => {
+  addNewSprint: async (record: RowInsert): Promise<RowSelect | undefined> => {
     const newSprint = await db
-      .insertInto('sprint')
-      .values({ sprintTitle: sprintTitle, sprintCode: sprintCode })
+      .insertInto(TABLE_SPRINT)
+      .values(record)
       .returningAll()
       .executeTakeFirst()
     return newSprint
   },
 
-  updateSprint: async (newSprintTitle, newSprintCode, id) => {
+  updateSprint: async (partial: RowUpdate, id: number) => {
     const updatedRow = await db
-      .updateTable('sprint')
-      .set({ sprintTitle: newSprintTitle, sprintCode: newSprintCode })
+      .updateTable(TABLE_SPRINT)
+      .set(partial)
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst()
     return updatedRow
   },
 
-  deleteSprint: async (id) => {
+  deleteSprint: async (id: number) => {
     const deletedRow = await db
-      .deleteFrom('sprint')
+      .deleteFrom(TABLE_SPRINT)
       .where('id', '=', id)
       .executeTakeFirst()
     return deletedRow

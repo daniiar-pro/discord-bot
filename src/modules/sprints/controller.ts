@@ -2,6 +2,10 @@ import { Router } from 'express'
 import buildRepository from './repository'
 import { jsonRoute } from '../../utils/middleware'
 import { Database } from '../../database'
+import { z } from 'zod'
+import * as schema from './schema'
+import NotFound from '../../utils/errors/NotFound'
+import BadRequest from '../../utils/errors/BadRequest'
 
 export default (db: Database) => {
   const routes = Router()
@@ -11,76 +15,121 @@ export default (db: Database) => {
   routes.get(
     '/',
     jsonRoute(async (req, res) => {
-      const getTemplate = await sprint.getAllSprint()
+      const sprints = await sprint.getAllSprint()
 
-      res.status(200)
-      res.json(getTemplate)
-      return
+      if (!sprints || sprints.length === 0) {
+        throw new NotFound('No sprints found.')
+      }
+
+      res.status(200).json(sprints)
     })
   )
 
   routes.get(
     '/:id',
     jsonRoute(async (req, res) => {
-      const sprintId = req.params.id
+      const sprintId = Number(req.params.id)
+
+      if (isNaN(sprintId)) {
+        throw new BadRequest('Invalid sprint ID.')
+      }
 
       const selectedSprint = await sprint.getSprintById(sprintId)
 
-      res.status(200)
-      res.json(selectedSprint)
+      if (!selectedSprint) {
+        throw new NotFound(`Sprint with ID ${sprintId} not found.`)
+      }
+
+      res.status(200).json(selectedSprint)
     })
   )
-
 
   routes.post(
     '/',
     jsonRoute(async (req, res) => {
-      const newSprintTitle = req.body.sprintTitle
-      const newSprintCode = req.body.sprintCode
+      try {
+        const bodyInsert = schema.parseInsertable(req.body)
 
-      const newCreatedSprint = await sprint.addNewSprint(
-        newSprintTitle,
-        newSprintCode
-      )
+        const newCreatedSprint = await sprint.addNewSprint({
+          sprintCode: bodyInsert.sprintCode,
+          sprintTitle: bodyInsert.sprintTitle,
+        })
 
-      res.status(200)
-      res.json(newCreatedSprint)
+        if (!newCreatedSprint) {
+          throw new Error('Failed to create a new sprint.')
+        }
+
+        res.status(201).json(newCreatedSprint)
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          throw new BadRequest('Invalid input data.')
+        }
+        throw validationError
+      }
     })
   )
 
   routes.patch(
     '/:id',
     jsonRoute(async (req, res) => {
-      const updatedSprintTitle = req.body.sprintTitle
-      const updatedSprintCode = req.body.sprintCode
+      const sprintId = Number(req.params.id)
 
-      const sprintId = req.params.id
+      if (isNaN(sprintId)) {
+        throw new BadRequest('Invalid sprint ID.')
+      }
 
-      const updatedSprint = await sprint.updateSprint(
-        updatedSprintTitle,
-        updatedSprintCode,
-        sprintId
-      )
+      try {
+        const bodyUpdate = schema.parseUpdateable(req.body)
 
-      res.status(200)
-      res.json(updatedSprint)
-      return
+        const updatedSprint = await sprint.updateSprint(
+          {
+            sprintCode: bodyUpdate.sprintCode,
+            sprintTitle: bodyUpdate.sprintTitle,
+          },
+          sprintId
+        )
+
+        if (!updatedSprint) {
+          throw new NotFound(`Sprint with ID ${sprintId} not found.`)
+        }
+
+        res.status(200).json(updatedSprint)
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          throw new BadRequest('Invalid input data.')
+        }
+        throw validationError
+      }
     })
   )
 
   routes.delete(
     '/delete/:id',
     jsonRoute(async (req, res) => {
-      const sprintId = req.params.id
+      const sprintId = Number(req.params.id)
 
-      const deletedSprint = sprint.deleteSprint(sprintId)
+      if (isNaN(sprintId)) {
+        throw new BadRequest('Invalid sprint ID.')
+      }
 
-      res.status(200).json({
-        message: `Sprint with id ${sprintId} has been deleted successfully!`,
-        data: deletedSprint,
-      })
+      try {
+        const deletedSprint =  sprint.deleteSprint(sprintId)
 
-      return
+        if (!deletedSprint) {
+          throw new NotFound(`Sprint with ID ${sprintId} not found.`)
+        }
+
+        res.status(200).json({
+          message: `Sprint with ID ${sprintId} has been deleted successfully!`,
+          data: deletedSprint,
+        })
+      } catch (error) {
+        if (error instanceof BadRequest || error instanceof NotFound) {
+          res.status(error.status).json({ error: error.message })
+        } else {
+          res.status(500).json({ error: 'Internal Server Error' })
+        }
+      }
     })
   )
 

@@ -1,39 +1,47 @@
-import type { Database } from '../../database'
-// CREATE TABLE IF NOT EXISTS "users" ("id" integer not null primary key autoincrement, "user_name" text not null, "sprint_code" text not null, "sprint_title" text not null, "congrats_message" text not null);
+import { Insertable, Selectable } from 'kysely'
+import type { Database, Users, Messages } from '../../database'
+// import { keys } from './schema'
+
+const TABLE_USERS = 'users'
+const TABLE_MESSAGES = 'messages'
+// type TableName = typeof TABLE_USERS
+
+type RowUsers = Users
+type RowMessages = Messages
+
+type RowWithoutId = Omit<RowUsers, 'id'>
+type RowInsert = Insertable<RowWithoutId>
+type RowSelectUsers = Selectable<RowUsers>
+type RowSelectMessages = Selectable<RowMessages>
+
 export default (db: Database) => ({
-  getAllMessages: async () =>
-    await db.selectFrom('messages').selectAll().execute(),
+  getAllMessages: async (): Promise<RowSelectMessages[]> =>
+    await db.selectFrom(TABLE_MESSAGES).selectAll().execute(),
 
   createCongratsMessage: async (
-    user_name: string,
-    sprint_code: string,
-    sprint_title: string,
-    congrats_message: string
-  ) => {
+    record: RowInsert
+  ): Promise<RowSelectUsers | undefined> => {
     return await db
-      .insertInto('users')
-      .values({
-        userName: user_name,
-        sprintCode: sprint_code,
-        sprintTitle: sprint_title,
-        congratsMessage: congrats_message,
-      })
+      .insertInto(TABLE_USERS)
+      .values(record)
       .returningAll()
       .executeTakeFirst()
-
-    // If the result contains a BigInt, ensure it's converted to a string
   },
 
-  getMessagesForUser: async (username: string) =>
+  getMessagesForUser: async (
+    username: string
+  ): Promise<Pick<RowSelectUsers, 'congratsMessage'>[]> =>
     await db
-      .selectFrom('users')
+      .selectFrom(TABLE_USERS)
       .select('congratsMessage')
       .where('userName', '=', username)
       .execute(),
 
-  getMessagesForSprint: async (sprintCode: string) =>
+  getMessagesForSprint: async (
+    sprintCode: string
+  ): Promise<Pick<RowSelectUsers, 'congratsMessage'>[]> =>
     await db
-      .selectFrom('users')
+      .selectFrom(TABLE_USERS)
       .select('congratsMessage')
       .where('sprintCode', '=', sprintCode)
       .execute(),

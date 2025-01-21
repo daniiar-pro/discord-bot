@@ -1,45 +1,56 @@
-import type { Database } from '../../database'
+import { Insertable, Selectable, Updateable } from 'kysely'
+import type { Database, Templates } from '../../database'
+
+
+const TABLE_TEMPLATES = 'templates'
+
+// type TableName = typeof TABLE_TEMPLATES
+type Row = Templates
+
+type RowWithoutId = Omit<Row, 'id'>
+type RowInsert = Insertable<RowWithoutId>
+type RowUpdate = Updateable<RowWithoutId>
+type RowSelect = Selectable<Row>
 
 export let messageTemplate = ''
 
 export default (db: Database) => ({
   getTemplate: async () =>
     await db
-      .selectFrom('templates')
-      .select('template')
+      .selectFrom(TABLE_TEMPLATES)
       .selectAll()
       .executeTakeFirst(),
 
-  getTemplateById: async (id) => {
+  getTemplateById: async (id: number) => {
     const selectedTemplate = await db
-      .selectFrom('templates')
-      .select('template')
+      .selectFrom(TABLE_TEMPLATES)
+      .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()
     messageTemplate = selectedTemplate?.template as string
     return selectedTemplate
   },
 
-  createNewTemplate: async (newTemplate) =>
+  createNewTemplate: async (record:RowInsert): Promise<RowSelect | undefined> =>
     await db
-      .insertInto('templates')
-      .values({ template: newTemplate })
+      .insertInto(TABLE_TEMPLATES)
+      .values(record)
       .returningAll()
       .executeTakeFirst(),
 
-  updateTemplate: async (newValue, id) => {
+  updateTemplate: async (id:number, partial: RowUpdate): Promise<RowSelect | undefined> => {
     const updatedRow = await db
-      .updateTable('templates')
-      .set({ template: newValue })
+      .updateTable(TABLE_TEMPLATES)
+      .set(partial)
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirst()
     return updatedRow
   },
 
-  deleteTemplate: async (id) => {
+  deleteTemplate: async (id: number) => {
     const deletedRow = await db
-      .deleteFrom('templates')
+      .deleteFrom(TABLE_TEMPLATES)
       .where('id', '=', id)
       .executeTakeFirst()
     return deletedRow
