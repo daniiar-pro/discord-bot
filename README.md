@@ -10,14 +10,11 @@ This repository contains a **Discord bot** combined with **Express** routes and 
 - [Environment Variables](#environment-variables)
 - [Running the App](#running-the-app)
 - [Endpoints](#endpoints)
-  - /messages (CRUD)
-  - /templates (CRUD)
-  - /sprint   (CRUD)
+  - /messages 
+  - /templates 
+  - /sprint   
 - [Discord Integration](#discord-integration)
-- [Testing](#testing)
-- [Assumptions and Notes](#assumptions-and-notes)
-- [Do Not Commit Sensitive Files](#do-not-commit-sensitive-files)
-- [License](#license)
+
 
 ---
 
@@ -73,7 +70,7 @@ Returns all congratulatory messages for a given userName.
 Returns messages related to a specific sprintCode.
 
 •	POST /messages
-Creates a new message, optionally posts to Discord (if configured).
+Creates a new message, and posts to Discord (if configured).
 
 
 ### Templates Routes
@@ -110,3 +107,10 @@ Updates a sprint record by ID.
 •	DELETE /sprint/delete/:id
 Deletes a sprint record by ID.
 
+
+## Discord Integration
+•	```DISCORD_WEBHOOK_URL``` is used by the bot to send messages to a Discord channel.
+
+•	Ensure the ```.env ```file contains a valid Discord webhook URL.
+
+•	The app posts messages (like  “congrats” messages) to this webhook.
