@@ -16,4 +16,3 @@ const updateable = insertable.partial()
 export const parseInsertable = (record: unknown) => insertable.parse(record)
 
 export const parseUpdateable = (record: unknown) => updateable.parse(record)
-

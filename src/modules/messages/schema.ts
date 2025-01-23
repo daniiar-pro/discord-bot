@@ -21,7 +21,7 @@ const schema = z.object({
 
 // schema version for inserting new records
 const insertable = schema.omit({
-  id:true
+  id: true,
 })
 
 export const parseInsertable = (record: unknown) => insertable.parse(record)

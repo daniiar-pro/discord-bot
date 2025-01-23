@@ -1,6 +1,5 @@
 import { Insertable, Selectable } from 'kysely'
 import type { Database, Users, Messages } from '../../database'
-// import { keys } from './schema'
 
 const TABLE_USERS = 'users'
 const TABLE_MESSAGES = 'messages'

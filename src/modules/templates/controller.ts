@@ -119,6 +119,9 @@ export default (db: Database) => {
       if (isNaN(templateId)) {
         throw new BadRequest('Invalid template ID')
       }
+      if (!templateId) {
+        throw new NotFound('No such an ID')
+      }
 
       try {
         const deletedTemplate = templates.deleteTemplate(templateId)

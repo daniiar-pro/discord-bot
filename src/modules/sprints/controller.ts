@@ -113,7 +113,7 @@ export default (db: Database) => {
       }
 
       try {
-        const deletedSprint =  sprint.deleteSprint(sprintId)
+        const deletedSprint = sprint.deleteSprint(sprintId)
 
         if (!deletedSprint) {
           throw new NotFound(`Sprint with ID ${sprintId} not found.`)

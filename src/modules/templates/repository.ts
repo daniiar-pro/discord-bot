@@ -1,7 +1,6 @@
 import { Insertable, Selectable, Updateable } from 'kysely'
 import type { Database, Templates } from '../../database'
 
-
 const TABLE_TEMPLATES = 'templates'
 
 // type TableName = typeof TABLE_TEMPLATES
@@ -16,10 +15,7 @@ export let messageTemplate = ''
 
 export default (db: Database) => ({
   getTemplate: async () =>
-    await db
-      .selectFrom(TABLE_TEMPLATES)
-      .selectAll()
-      .executeTakeFirst(),
+    await db.selectFrom(TABLE_TEMPLATES).selectAll().execute(),
 
   getTemplateById: async (id: number) => {
     const selectedTemplate = await db
@@ -31,14 +27,19 @@ export default (db: Database) => ({
     return selectedTemplate
   },
 
-  createNewTemplate: async (record:RowInsert): Promise<RowSelect | undefined> =>
+  createNewTemplate: async (
+    record: RowInsert
+  ): Promise<RowSelect | undefined> =>
     await db
       .insertInto(TABLE_TEMPLATES)
       .values(record)
       .returningAll()
       .executeTakeFirst(),
 
-  updateTemplate: async (id:number, partial: RowUpdate): Promise<RowSelect | undefined> => {
+  updateTemplate: async (
+    id: number,
+    partial: RowUpdate
+  ): Promise<RowSelect | undefined> => {
     const updatedRow = await db
       .updateTable(TABLE_TEMPLATES)
       .set(partial)
@@ -49,11 +50,16 @@ export default (db: Database) => ({
   },
 
   deleteTemplate: async (id: number) => {
-    const deletedRow = await db
-      .deleteFrom(TABLE_TEMPLATES)
+    const rowToDelete = await db
+      .selectFrom(TABLE_TEMPLATES)
+      .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()
-    return deletedRow
+
+    if (!rowToDelete) return undefined
+
+    await db.deleteFrom(TABLE_TEMPLATES).where('id', '=', id).executeTakeFirst()
+    return rowToDelete
   },
 })
 
